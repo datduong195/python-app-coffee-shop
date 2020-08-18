@@ -10,7 +10,30 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,json,time,os
 from item import Ui_MainWindow
 from escpos.printer import Usb
- 
+priceList ={
+    "bac_siu_da":22000,
+    "ca_cao_sua_da":30000,
+    "cafe_den_da":15000,
+    "cafe_sua_da":20000,
+    "sinh_to_bo":35000,
+    "sinh_to_dau":35000,
+    "sinh_to_dau_chuoi":35000,
+    "sinh_to_sau_rieng":40000,
+    "soda_bac_ha":20000,
+    "soda_blue":25000,
+    "soda_chanh":25000,
+    "soda_kiwi":25000,
+    "soda_nho_den":25000,
+    "soda_sua_hot_ga":38000,
+    "sua_tuoi_cafe":22000,
+    "tra_bong_cuc":30000,
+    "tra_chanh_gung_mat_ong":30000,
+    "tra_dao_cam_sa":30000,
+    "tra_lipton":25000,
+    "yogurt_cam_tuoi":30000,
+    "yogurt_dau_tuoi":30000,
+    "yogurt_hat_chia":25000
+}
 class mainWindow(object):
 
 
@@ -235,12 +258,31 @@ class mainWindow(object):
         notAdmin.setIcon(QMessageBox.Critical)
         notAdmin.exec_()
     def checkOutFunction(self):
-        for item in self.itemDataBase[self.tableDrop.currentText()]:
-           print(item)
+
+        stringToPrint = self.getPriceFromItem()
+        print(stringToPrint)
         self.showItem.clear()
         self.itemDataBase[self.tableDrop.currentText()].clear()
         self.itemDataBase[self.tableDrop.currentText()] = ["Table Number "+ self.tableDrop.currentText()]
         self.showItem.append("Table Number "+ self.tableDrop.currentText())
+        
+    def getPriceFromItem(self):
+        temp = self.itemDataBase[self.tableDrop.currentText()].pop(0)
+        totalPrice = 0
+        tempString = ""
+        for item in self.itemDataBase[self.tableDrop.currentText()]:
+            quantity = item.split(" x ")[0]
+            name = item.split(" x ")[1].split(".")[0]
+            priceOfOne = priceList[name]
+            priceActual = priceOfOne*int(quantity)
+            totalPrice += priceActual
+            ##print(item.split(".")[0] + " = " + str(price))
+            tempString += item.split(".")[0] + " : " + str("{:0,.2f}".format(float(priceOfOne))) + " = " + str("{:0,.2f}".format(float(priceActual))) + "vnd\n"
+        tempString += """==============================
+                    Total: """ + str("{:0,.2f}".format(float(totalPrice)))+"vnd"
+        return tempString
+
+
     # def closeEvent(self, event):
     #     close = QtWidgets.QMessageBox.question(self,
     #                                  "QUIT",
