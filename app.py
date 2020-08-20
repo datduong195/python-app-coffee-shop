@@ -9,7 +9,11 @@ from PyQt5.QtWidgets import QApplication,QDialog,QMessageBox,QFileDialog,QAction
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,json,time,os
 from item import Ui_MainWindow
-from escpos.printer import Usb
+import tempfile
+import win32api,win32print,codecs
+
+
+
 priceList ={
     "bac_siu_da":22000,
     "ca_cao_sua_da":30000,
@@ -242,6 +246,7 @@ class mainWindow(object):
                 self.itemDataBase = json.load(f)
             self.loadTableItem()
         except:
+            print("Can't Open Backup Folder!")
             pass
     def removeOldBackupFile(self):
         currentMonthStr = time.strftime("%m")
@@ -265,11 +270,13 @@ class mainWindow(object):
         self.itemDataBase[self.tableDrop.currentText()].clear()
         self.itemDataBase[self.tableDrop.currentText()] = ["Table Number "+ self.tableDrop.currentText()]
         self.showItem.append("Table Number "+ self.tableDrop.currentText())
-        
+        self.callPrinterToPrint(stringToPrint)
     def getPriceFromItem(self):
         temp = self.itemDataBase[self.tableDrop.currentText()].pop(0)
         totalPrice = 0
-        tempString = ""
+        tempString = """An nhiên Cafe by Bảo Châu
+Địa chỉ 09 Phạm Thái Bường (Liên Xã), Thị xã Hoà Thành, Tây Ninh
+Bill of Table """ + self.tableDrop.currentText() + "\n"
         for item in self.itemDataBase[self.tableDrop.currentText()]:
             quantity = item.split(" x ")[0]
             name = item.split(" x ")[1].split(".")[0]
@@ -281,7 +288,17 @@ class mainWindow(object):
         tempString += """==============================
                     Total: """ + str("{:0,.2f}".format(float(totalPrice)))+"vnd"
         return tempString
-
+    def callPrinterToPrint(self,stringToPrint):
+        filename = tempfile.mktemp (".txt")
+        with codecs.getwriter('utf_8') (open (filename, "wb")) as file:
+            file.write(stringToPrint)
+        win32api.ShellExecute (
+        0,
+        "printto",
+        filename,
+        '"%s"' % win32print.GetDefaultPrinter (),
+        ".",
+        0)
 
     # def closeEvent(self, event):
     #     close = QtWidgets.QMessageBox.question(self,
