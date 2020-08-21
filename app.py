@@ -24,16 +24,17 @@ priceList ={
     "sinh_to_dau_chuoi":35000,
     "sinh_to_sau_rieng":40000,
     "soda_bac_ha":20000,
-    "soda_blue":25000,
-    "soda_chanh":25000,
-    "soda_kiwi":25000,
+    "soda_blue_bien":25000,
+    "soda_chanh_tuoi":25000,
+    "soda_kiwi_tuoi":25000,
     "soda_nho_den":25000,
     "soda_sua_hot_ga":38000,
     "sua_tuoi_cafe":22000,
     "tra_bong_cuc":30000,
-    "tra_chanh_gung_mat_ong":30000,
+    "tra_cam_tuoi":30000,
+    "chanh_gung_mat_ong":30000,
     "tra_dao_cam_sa":30000,
-    "tra_lipton":25000,
+    "tra_den_lipton":25000,
     "yogurt_cam_tuoi":30000,
     "yogurt_dau_tuoi":30000,
     "yogurt_hat_chia":25000
@@ -284,9 +285,9 @@ Bill of Table """ + self.tableDrop.currentText() + "\n"
             priceActual = priceOfOne*int(quantity)
             totalPrice += priceActual
             ##print(item.split(".")[0] + " = " + str(price))
-            tempString += item.split(".")[0] + " : " + str("{:0,.2f}".format(float(priceOfOne))) + " = " + str("{:0,.2f}".format(float(priceActual))) + "vnd\n"
-        tempString += """==============================
-                    Total: """ + str("{:0,.2f}".format(float(totalPrice)))+"vnd"
+            tempString += item.split(".")[0] + " :\t{} = {} vnd\n".format(str("{:>,.2f}".format(float(priceOfOne))),str("{:>3,.2f}".format(float(priceActual))))
+        tempString += """=================================================
+\t\t\tTotal: {:>13,.2f} vnd""".format(float(totalPrice))
         return tempString
     def callPrinterToPrint(self,stringToPrint):
         filename = tempfile.mktemp (".txt")

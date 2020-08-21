@@ -39,7 +39,7 @@ class Ui_MainWindow(object):
         self.groupBoxHorList= [0,210,420,630]
         self.groupBoxVerOffset = 180
         print("Calling create group box function ...")
-        self.createGroupBox("E:/Bi/CF_App/item")
+        self.createGroupBox("item")
 
         MainWindow.setCentralWidget(self.centralwidget)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
