@@ -11,9 +11,8 @@ import sys,json,time,os
 from item import Ui_MainWindow
 import tempfile
 import win32api,win32print,codecs
-
-
-
+from docx.shared import Mm
+import docx
 priceList ={
     "bac_siu_da":22000,
     "ca_cao_sua_da":30000,
@@ -55,7 +54,7 @@ class mainWindow(object):
         self.itemBox.setObjectName("itemBox")
 
         self.checkOutBtn = QtWidgets.QPushButton(self.itemBox)
-        self.checkOutBtn.setGeometry(QtCore.QRect(290, 110, 75, 23))
+        self.checkOutBtn.setGeometry(QtCore.QRect(290, 140, 75, 23))
         self.checkOutBtn.setObjectName("checkOutBtn")
         self.checkOutBtn.clicked.connect(self.checkOutFunction)
 
@@ -94,6 +93,12 @@ class mainWindow(object):
         self.showItem.setGeometry(QtCore.QRect(10, 50, 261, 231))
         self.showItem.setObjectName("showItem")
         self.showItem.setReadOnly(True)
+
+        self.orderButton = QtWidgets.QPushButton(self.itemBox)
+        self.orderButton.setGeometry(QtCore.QRect(290, 110, 75, 23))
+        self.orderButton.setObjectName("orderButton")
+        self.orderButton.clicked.connect(self.orderFunction)
+        self.orderButton.setEnabled(False)
 
         self.loadBackupFile = QtWidgets.QPushButton(self.itemBox)
         self.loadBackupFile.setGeometry(QtCore.QRect(290, 20, 75, 23))
@@ -169,6 +174,7 @@ class mainWindow(object):
         self.userLbl.setText(_translate("Dialog", "User:"))
         self.loginBtn.setText(_translate("Dialog", "Login"))
         self.passLbl.setText(_translate("Dialog", "Pass:"))
+        self.orderButton.setText(_translate("Dialog", "Order"))
         self.loadBackupFile.setText(_translate("Dialog", "Load Backup"))
 
     def addItemFunction(self):
@@ -252,10 +258,15 @@ class mainWindow(object):
     def removeOldBackupFile(self):
         currentMonthStr = time.strftime("%m")
         folder = os.fsencode("backup")
-        for file in os.listdir(folder):
-            filename = os.fsdecode(file)
-            if filename.endswith('.json') and filename[4:6] != currentMonthStr: 
-                os.remove("backup/"+filename)
+        try:
+            for file in os.listdir(folder):
+                filename = os.fsdecode(file)
+                if filename.endswith('.json') and filename[4:6] != currentMonthStr: 
+                    os.remove("backup/"+filename)
+        except:
+            print("Missing Backup Folder !")
+            print("Creating Backup Folder ...")
+            os.mkdir("backup")
                 
     def showNotAuthorize(self):
         notAdmin = QMessageBox()
@@ -275,9 +286,12 @@ class mainWindow(object):
     def getPriceFromItem(self):
         temp = self.itemDataBase[self.tableDrop.currentText()].pop(0)
         totalPrice = 0
+        tempDateTime = time.strftime("%d-%m-%Y %H:%M Id: ")
+        tempBillId = time.strftime("%m%d%H%M%S")
         tempString = """An nhiên Cafe by Bảo Châu
-Địa chỉ 09 Phạm Thái Bường (Liên Xã), Thị xã Hoà Thành, Tây Ninh
-Bill of Table """ + self.tableDrop.currentText() + "\n"
+
+Address: 09 Phạm Thái Bường (Liên Xã) Thị xã Hoà Thành, TP. Tây Ninh\n\n"""+tempDateTime +tempBillId+  "\n\n" 
+        tempString+= "Bill of Table " + self.tableDrop.currentText() + "\n\n"
         for item in self.itemDataBase[self.tableDrop.currentText()]:
             quantity = item.split(" x ")[0]
             name = item.split(" x ")[1].split(".")[0]
@@ -285,22 +299,81 @@ Bill of Table """ + self.tableDrop.currentText() + "\n"
             priceActual = priceOfOne*int(quantity)
             totalPrice += priceActual
             ##print(item.split(".")[0] + " = " + str(price))
-            tempString += item.split(".")[0] + " :\t{} = {} vnd\n".format(str("{:>,.2f}".format(float(priceOfOne))),str("{:>3,.2f}".format(float(priceActual))))
-        tempString += """=================================================
-\t\t\tTotal: {:>13,.2f} vnd""".format(float(totalPrice))
+            tempString += item.split(".")[0] + "   =   %s vnd\n" % ("{:,.0f}".format(int(priceActual)))
+        tempString += """============================
+\t\tTotal:  {:>1,.0f} vnd""".format(int(totalPrice))
         return tempString
     def callPrinterToPrint(self,stringToPrint):
-        filename = tempfile.mktemp (".txt")
-        with codecs.getwriter('utf_8') (open (filename, "wb")) as file:
-            file.write(stringToPrint)
-        win32api.ShellExecute (
-        0,
-        "printto",
-        filename,
-        '"%s"' % win32print.GetDefaultPrinter (),
-        ".",
-        0)
+        document = docx.Document()
+        margin = 5
+        sections = document.sections
+        for section in sections:
+            section.page_height = Mm(210)
+            section.page_width = Mm(72)
+            section.top_margin = Mm(margin)
+            section.bottom_margin = Mm(margin)
+            section.left_margin = Mm(margin)
+            section.right_margin = Mm(margin)
 
+        document.add_paragraph(stringToPrint)
+        document.save("testdoc.docx")
+        try:
+            print("Start printing...")
+            os.startfile("testdoc.docx", "print")
+            time.sleep(1)
+            os.startfile("testdoc.docx", "print")
+            time.sleep(1)
+            print("Done!")
+        except Exception as e:
+            print(str(e))
+            print("--Failed to print--")
+            time.sleep(2)
+    def orderFunction(self):
+        stringToPrint = self.getPriceFromItem()
+        print(stringToPrint)
+        self.callPrinterToPrint(stringToPrint)
+
+    # def callPrinterToPrint(self,stringToPrint):
+    #     filename = "test.txt"
+    #     name = win32print.GetDefaultPrinter()
+    #     printdefaults = {"DesiredAccess": win32print.PRINTER_ALL_ACCESS}
+    #     handle = win32print.OpenPrinter(name, printdefaults)
+    #     level = 2
+    #     # retrieve default settings.  this code does not work on
+    #     attributes = win32print.GetPrinter(handle ,level)
+    #     attributes["pDevMode"].PaperSize = 0
+    #     attributes["pDevMode"].PaperLength = 21
+    #     attributes["pDevMode"].PaperWidth = 7.21
+    #     attributes["pDevMode"].Position_x = 1
+    #     attributes["pDevMode"].Position_y = 1
+    #     attributes["pDevMode"].PelsWidth = 1
+    #     attributes["pDevMode"].PelsHeight = 1
+    #     attributes["pDevMode"].DisplayFixedOutput = DisplayFixedOutput =2
+    #     try:
+    #         win32print.SetPrinter(handle, level, attributes, 0)
+    #     except:
+    #         print("win32print.SetPrinter: settings could not be changed")
+    #     try:
+    #         with codecs.getwriter('utf_8') (open (filename, "wb")) as file:
+    #             file.write(stringToPrint)
+    #         Print2Copies = win32api.ShellExecute(0, 'print', filename, None, '.', 0)
+    #         time.sleep(1)
+
+    #         Print2Copies 
+
+    #         # hdc = win32gui.CreateDC('', printer_name, attributes)
+    #         # win32print.StartDoc(hdc, ('Test', "test.txt", None, 0))
+    #         # win32print.StartPage(hdc)
+
+    #         # win32print.EndPage(hdc)
+    #         # win32print.EndDoc(hdc)
+    #         print("Printing now...")
+    #         win32print.ClosePrinter(handle)
+    #         print("Done")
+    #     except Exception as e:
+    #         print(str(e))
+    #         print("--Failed to print--")
+    #         time.sleep(5)
     # def closeEvent(self, event):
     #     close = QtWidgets.QMessageBox.question(self,
     #                                  "QUIT",
